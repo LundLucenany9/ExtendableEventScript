@@ -1,0 +1,26 @@
+import minecraft
+
+global var event_count = 0
+
+global func debug(text)
+  print $"[DEBUG] $text"
+
+func handle(name)
+  event_count = $global.event_count + 1
+
+  if !isdefined #event.message
+    debug "No message"
+  elif $event.message == null
+    debug "Message is null"
+  else
+    print $"Message: $event.message"
+
+  var mobs = ["zombie", "creeper"]
+
+  foreach var i, var mob -> $mobs
+    minecraft.spawn $mob {amount=1}
+
+  for var i -> 0-5
+    print $i
+
+  return
