@@ -1,3 +1,4 @@
+package de.lundlucenany9;
 
 public record Token(TokenType type, String lexeme, int line, int column) {
     @Override

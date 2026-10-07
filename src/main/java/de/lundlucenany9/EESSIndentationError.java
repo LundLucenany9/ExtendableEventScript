@@ -1,3 +1,5 @@
+package de.lundlucenany9;
+
 public class EESSIndentationError extends RuntimeException {
     public EESSIndentationError(String message) {
         super(message);

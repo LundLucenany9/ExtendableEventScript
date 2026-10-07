@@ -6,7 +6,7 @@ global func debug(text)
   print $"[DEBUG] $text"
 
 func handle(name)
-  event_count = $global.event_count + 1
+  $event_count = $glob.event_count + 1
 
   if !isdefined #event.message
     debug "No message"
@@ -17,10 +17,16 @@ func handle(name)
 
   var mobs = ["zombie", "creeper"]
 
-  foreach var i, var mob -> $mobs
+  var mob0 = $mobs[0]
+
+  var map = {a=1,b=2}
+
+  var entry = $map[a]
+
+  foreach rovar i, rovar mob -> $mobs
     minecraft.spawn $mob {amount=1}
 
-  for var i -> 0-5
+  for rovar i -> 0-5
     print $i
 
   return

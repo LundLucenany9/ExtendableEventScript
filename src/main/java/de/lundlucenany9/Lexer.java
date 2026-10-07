@@ -1,3 +1,5 @@
+package de.lundlucenany9;
+
 import java.util.*;
 
 public class Lexer {
@@ -8,6 +10,7 @@ public class Lexer {
         KEYWORDS.put("import", TokenType.IMPORT);
         KEYWORDS.put("global", TokenType.GLOBAL);
         KEYWORDS.put("var", TokenType.VAR);
+        KEYWORDS.put("rovar", TokenType.ROVAR);
         KEYWORDS.put("func", TokenType.FUNC);
         KEYWORDS.put("if", TokenType.IF);
         KEYWORDS.put("elif", TokenType.ELIF);
