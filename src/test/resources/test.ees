@@ -2,10 +2,10 @@ import minecraft
 
 global var event_count = 0
 
-global func debug(text)
+global function debug(text)
   print $"[DEBUG] $text"
 
-func handle(name)
+function handle(name)
   $event_count = $glob.event_count + 1
 
   if !isdefined #event.message
@@ -19,9 +19,9 @@ func handle(name)
 
   var mob0 = $mobs[0]
 
-  var map = {a=1,b=2}
+  var map = {"a"=1,"b"=2}
 
-  var entry = $map[a]
+  var entry = $map["a"]
 
   foreach rovar i, rovar mob -> $mobs
     minecraft.spawn $mob {amount=1}

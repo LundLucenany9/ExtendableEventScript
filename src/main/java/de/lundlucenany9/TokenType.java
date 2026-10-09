@@ -59,7 +59,7 @@ public enum TokenType {
     DEDENT("dedent"),
     NEWLINE("newline"),
 
-    EOF("");
+    EOF("End of File");
 
     private final String lexeme;
 

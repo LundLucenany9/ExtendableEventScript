@@ -100,16 +100,18 @@ public class Parser {
 
     private VarDeclaration parseVar(boolean isGlobal, boolean isReadOnly) {
         String name = expect(TokenType.IDENTIFIER).lexeme();
+        expect(TokenType.EQUAL);
         registerVariable(name);
 
-        expect(TokenType.EQUAL);
         ExpressionNode initializer = parseExpression();
         skipNewlines();
-        return new VarDeclaration(name, initializer, isGlobal, isReadOnly);
+        return new VarDeclaration((isGlobal ? "glob" : scope) + "." + name, initializer, isReadOnly);
     }
 
     private FunctionDeclaration parseGlobalFunction() {
+        if(scope.equals("func")) throw error(peek(), "Functions cannot be nested");
         String name = expect(TokenType.IDENTIFIER).lexeme();
+        name = scope + "." + name;
         registerFunction(name);
 
         FunctionDeclaration func = parseFuncBody(name);
@@ -117,7 +119,9 @@ public class Parser {
     }
 
     private FunctionDeclaration parseFunction() {
+        if(scope.equals("func")) throw error(peek(), "Functions cannot be nested");
         String name = expect(TokenType.IDENTIFIER).lexeme();
+        name = scope + "." + name;
         registerFunction(name);
 
         return parseFuncBody(name);
@@ -239,12 +243,12 @@ public class Parser {
         String valueVar = expect(TokenType.IDENTIFIER).lexeme();
         registerVariable(valueVar);
 
-        String indexVar = null;
-        if(match(TokenType.COMMA)) {
-            expect(TokenType.ROVAR);
-            indexVar = expect(TokenType.IDENTIFIER).lexeme();
-            registerVariable(indexVar);
-        }
+
+        expect(TokenType.COMMA);
+        expect(TokenType.ROVAR);
+        String indexVar = expect(TokenType.IDENTIFIER).lexeme();
+        registerVariable(indexVar);
+
 
         expect(TokenType.ARROW);
 
@@ -381,6 +385,9 @@ public class Parser {
         while (true) {
             if(match(TokenType.LEFT_BRACKET)) {
                 ExpressionNode index = parseExpression();
+                if(!(index instanceof Literal) && !(index instanceof VariableAccess)) {
+                    throw error(previous(), "Index must be a literal or variable access");
+                }
                 expect(TokenType.RIGHT_BRACKET);
                 expr = new IndexAccess(expr, index);
             } /*else if(match(TokenType.LEFT_BRACE)) {
@@ -398,7 +405,7 @@ public class Parser {
         if(match(TokenType.NULL)) return new Literal(null);
         if(match(TokenType.INTEGER)) return new Literal(Integer.parseInt(previous().lexeme()));
         if(match(TokenType.DECIMAL)) return new Literal(Double.parseDouble(previous().lexeme()));
-        if(match(TokenType.STRING)) return new Literal(previous().lexeme());
+        if(match(TokenType.STRING)) return new Literal(previous().lexeme().substring(1, previous().lexeme().length() - 1));
         if(match(TokenType.INTERPOLATED_STRING)) return parseInterpolatedString(previous().lexeme());
         if(match(TokenType.LEFT_BRACKET)) return parseArrayLiteral();
         if(match(TokenType.LEFT_BRACE)) return parseMapLiteral();
@@ -423,7 +430,7 @@ public class Parser {
         }
         if(check(TokenType.IDENTIFIER)) return parseFunctionCallOrVariable();
 
-        throw error(peek(), "Unexpected token: " + peek().lexeme());
+        throw error(peek(), "Unexpected token: " + peek().type().getLexeme());
     }
 
     private ExpressionNode parseFunctionCallOrVariable() {
@@ -476,7 +483,8 @@ public class Parser {
 
         if(!check(TokenType.RIGHT_BRACE)) {
             do {
-                String key = expect(TokenType.IDENTIFIER).lexeme();
+                String key = expect(TokenType.STRING).lexeme();
+                key = key.substring(1, key.length() - 1);
                 expect(TokenType.EQUAL);
                 ExpressionNode value = parseExpression();
                 entries.put(key, value);
