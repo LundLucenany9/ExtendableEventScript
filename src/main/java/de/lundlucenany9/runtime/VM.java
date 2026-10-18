@@ -202,7 +202,7 @@ public class VM {
                 default -> throw new ScriptException("Unknown opcode: " + op);
             }
         }
-        while (true);
+        //while (true);
     }
 
 

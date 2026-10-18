@@ -7,6 +7,7 @@ import de.lundlucenany9.debug.DebugVisualizer;
 import de.lundlucenany9.runtime.Host;
 import de.lundlucenany9.runtime.StaticObjects;
 import de.lundlucenany9.runtime.VM;
+import de.lundlucenany9.runtime.simple.SimpleHost;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -29,30 +30,30 @@ public class VMTest {
                 return StaticObjects.UNDEFINED;
             };
         String source = """
-                print "Hello World"
+                log "Hello World"
                 for rovar i -> 0-10
-                    print $"i is $($i + 1)"
-                print "Reverse!!"
+                    log $"i is $($i + 1)"
+                log "Reverse!!"
                 for rovar i -> 5-0
-                    print $i
-                print "i is " {newline = false}
-                print $i
+                    log $i
+                log "i is " {newline = false}
+                log $i
                 if 5 == 6
-                    print "5 is 6"
+                    log "5 is 6"
                 elif 6 == 3
-                    print "6 is not 3"
+                    log "6 is not 3"
                 else
-                    print "5 is not 6"
+                    log "5 is not 6"
                 if 5 == 5
-                    print "if"
-                print $"i is $i"
-                print (["a", "b", "c"] + "d")[3]
-                print ({"a"=1, "b"=2,"c"=3}["c"])
+                    log "if"
+                log $"i is $i"
+                log (["a", "b", "c"] + "d")[3]
+                log ({"a"=1, "b"=2,"c"=3}["c"])
                 function add(a,b)
-                    print $"a is $a, b is $b"
+                    log $"a is $a, b is $b"
                     return $a + $b
                 add 1 2
-                print (add 5 100)
+                log (add 5 100)
                 """;
 
         DebugVisualizer.println("Starting...");
@@ -67,7 +68,7 @@ public class VMTest {
         //System.out.println(HexFormat.ofDelimiter(" ").formatHex(code, 430, 450));
         //System.out.println(Disassembler.disassemble(code));
 
-        VM vm = new VM(host);
+        VM vm = new VM(new SimpleHost.Builder().addDefaultLibraries().build());
         VM silentVM = new VM((n,a,o)-> StaticObjects.UNDEFINED);
 
         //for (int i = 0; i < 1000; i++) silentVM.run(code, new HashMap<>(), new HashMap<>());

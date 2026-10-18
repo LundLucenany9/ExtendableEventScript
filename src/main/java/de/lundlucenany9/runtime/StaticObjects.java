@@ -6,13 +6,13 @@ public final class StaticObjects {
     public static final Object NULL = new Object(){
         @Override
         public String toString() {
-            return "StaticObjects@null";
+            return "null";
         }
     };
     public static final Object UNDEFINED = new Object(){
         @Override
         public String toString() {
-            return "StaticObjects@undefined";
+            return "undefined";
         }
     };
 }

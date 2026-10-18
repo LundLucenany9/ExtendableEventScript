@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.compile.JavaCompile
+
 plugins {
     id("java")
 }
@@ -16,4 +18,8 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+
+}
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-parameters")
 }
