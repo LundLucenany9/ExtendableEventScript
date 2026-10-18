@@ -53,7 +53,10 @@ public class VMTest {
                     log $"a is $a, b is $b"
                     return $a + $b
                 add 1 2
-                log (add 5 100)
+                log add 5 100
+                log #i["defined"]
+                rovar x = 1
+                log ({"a"={"b"="hi","c"=[add 1 2,"b"]}})["a"]["c"][0]{newline=false}
                 """;
 
         DebugVisualizer.println("Starting...");

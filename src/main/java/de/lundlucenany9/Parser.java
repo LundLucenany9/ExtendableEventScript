@@ -599,7 +599,7 @@ public class Parser {
 
     private Token expect(TokenType type) {
         if(check(type)) return advance();
-        throw error(peek(), "Expected " + type.getLexeme() + " but got " + peek().type().getLexeme());
+        throw error(peek(), "Expected " + type.getLexeme() + " but got " + peek().type().getLexeme() + ": '" + peek().lexeme() + "'");
     }
 
     private void skipNewlines() {

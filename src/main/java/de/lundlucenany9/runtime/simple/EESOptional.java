@@ -8,6 +8,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface EESOptional {
+    String name();
     String stringValue() default "";
     int intValue() default 0;
     boolean booleanValue() default false;
