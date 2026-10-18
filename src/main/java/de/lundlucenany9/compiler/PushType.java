@@ -6,6 +6,7 @@ public enum PushType {
     STRING,
     BOOLEAN,
     NULL,
+    UNDEFINED,
     ARRAY,
     MAP
 }

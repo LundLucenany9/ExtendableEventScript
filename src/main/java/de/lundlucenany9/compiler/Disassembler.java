@@ -2,6 +2,7 @@ package de.lundlucenany9.compiler;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 
 public class Disassembler {
     public static String disassemble(byte[] code) {
@@ -21,7 +22,7 @@ public class Disassembler {
 
                 switch (op) {
                     case IMPORT -> sb.append(" ").append(readString(buf));
-                    case DEFINE_TMP, UNDEFINE_TMP, LOAD, STORE, LOAD_REF, LOAD_NEXT_INDEX -> sb.append(' ').append(readString(buf));
+                    case DEFINE_TMP, UNDEFINE_TMP, STORE_TMP, LOAD, STORE, LOAD_REF, LOAD_NEXT_INDEX -> sb.append(' ').append(readString(buf));
                     case PUSH -> {
                         PushType t = PushType.values()[buf.get()];
                         sb.append(' ').append(t);
@@ -30,6 +31,7 @@ public class Disassembler {
                             case FLOAT -> sb.append(' ').append(buf.getDouble());
                             case STRING -> sb.append(" \"").append(readString(buf)).append('"');
                             case ARRAY, MAP -> sb.append(' ').append(buf.getShort());
+                            case BOOLEAN -> sb.append(' ').append(buf.get() == 1);
                             default -> {
                             }
                         }
@@ -66,6 +68,9 @@ public class Disassembler {
                 sb.append('\n');
             }
         } catch (Exception e) {
+            System.err.println("Error at position " + buf.position());
+            System.out.println(sb);
+            System.out.println(HexFormat.ofDelimiter(" ").formatHex(buf.array(), buf.position(), buf.limit()));
             throw new RuntimeException(e);
         }
         return sb.toString();

@@ -131,7 +131,7 @@ public class Parser {
         expect(TokenType.LEFT_PAREN);
 
         List<FunctionParameter> parameters = new ArrayList<>();
-        Map<String, ExpressionNode> optionalParams = new HashMap<>();
+        Map<String, ExpressionNode> optionalParams = new LinkedHashMap<>();
 
         functionParameters.clear();
 
@@ -270,7 +270,7 @@ public class Parser {
 
     private ReturnStatement parseReturn() {
         ExpressionNode value = null;
-        if(!check(TokenType.NEWLINE) && !check(TokenType.EOF) && !check(TokenType.DEDENT) && !canStartExpression()) {
+        if(!check(TokenType.NEWLINE) && !check(TokenType.EOF) && !check(TokenType.DEDENT) && canStartExpression()) {
             value = parseExpression();
         }
         skipNewlines();
@@ -409,6 +409,8 @@ public class Parser {
         if(match(TokenType.INTERPOLATED_STRING)) return parseInterpolatedString(previous().lexeme());
         if(match(TokenType.LEFT_BRACKET)) return parseArrayLiteral();
         if(match(TokenType.LEFT_BRACE)) return parseMapLiteral();
+        if(match(TokenType.TRUE)) return new Literal(true);
+        if(match(TokenType.FALSE)) return new Literal(false);
         if(match(TokenType.DOLLAR)) {
             StringBuilder name = new StringBuilder(expect(TokenType.IDENTIFIER).lexeme());
             while (match(TokenType.DOT)) {

@@ -22,6 +22,8 @@ public enum TokenType {
     STRING( "string"),
     INTERPOLATED_STRING( "interpolated string"),
     NULL( "'null'"),
+    TRUE( "'true'"),
+    FALSE( "'false'"),
 
     OR( "'or'"),
     AND( "'and'"),

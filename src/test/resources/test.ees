@@ -7,7 +7,7 @@ global function debug(text)
 
 function handle(name)
   $event_count = $glob.event_count + 1
-
+  var d = null
   if !isdefined #event.message
     debug "No message"
   elif $event.message == null

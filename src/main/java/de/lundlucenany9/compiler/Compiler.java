@@ -38,22 +38,23 @@ public class Compiler {
 
     private void compileFunctionDeclaration(FunctionDeclaration func) {
         // Defaults der optionalen Parameter auswerten (in Map-Reihenfolge)
-        for (ExpressionNode def : func.optionalParams().values()) {
-            compileExpression(def);
-        }
+        //for (ExpressionNode def : func.optionalParams().values()) {
+        //    compileExpression(def);
+        //}
 
         writer.writeOpcode(Opcode.DEFINE_FUNC);
         writer.writeString(func.name());
 
         writer.writeByte((byte) func.parameters().size());
         for (FunctionParameter p : func.parameters()) {
-            writer.writeByte((byte) (p.isReference() ? 1 : 0));
+            writer.writeBit(p.isReference());
             writer.writeString(p.name());
         }
 
         writer.writeByte((byte) func.optionalParams().size());
         for (String key : func.optionalParams().keySet()) {
             writer.writeString(key);
+            compileExpression(func.optionalParams().get(key));
         }
 
         int endJump = writer.getOffset();
@@ -92,7 +93,7 @@ public class Compiler {
         else if(stmt instanceof ReturnStatement st) compileReturnStatement(st);
         else if(stmt instanceof ExpressionStatement st) compileExpressionStatement(st);
         else if(stmt instanceof FunctionDeclaration st) compileFunctionDeclaration(st);
-        else throw new RuntimeException("Unknown statement type: " + stmt.getClass().getName());
+        else throw new CompileException("Unknown statement type: " + stmt.getClass().getName());
     }
 
     private void compileVarDeclaration(VarDeclaration var) {
@@ -103,61 +104,64 @@ public class Compiler {
     }
 
     private void compileIfStatement(IfStatement ifStatement) {
-        List<Integer> jumpAddresses = new ArrayList<>();
+        List<Integer> endJumps = new ArrayList<>();
+        boolean hasMoreBranches = !ifStatement.elifClauses().isEmpty()
+                || !ifStatement.elseBody().isEmpty();
 
+        // if
         compileExpression(ifStatement.condition());
         writer.writeOpcode(Opcode.JMP_IF_NOT);
-        int ifElseJump = writer.getOffset();
+        int pendingFalseJump = writer.getOffset();
         writer.writeInt(0);
 
         compileStatements(ifStatement.thenBody());
 
-        writer.writeOpcode(Opcode.JMP);
-        jumpAddresses.add(writer.getOffset());
-        writer.writeInt(0);
+        if (hasMoreBranches) {
+            writer.writeOpcode(Opcode.JMP);
+            endJumps.add(writer.getOffset());
+            writer.writeInt(0);
+        }
+        writer.setIntAt(pendingFalseJump, writer.getOffset());   // Beginn des nächsten Zweigs
 
-        int elifStartOffset = writer.getOffset();
-        writer.setIntAt(ifElseJump, elifStartOffset);
+        // elif
+        List<IfElseClause> elifs = ifStatement.elifClauses();
+        for (int i = 0; i < elifs.size(); i++) {
+            IfElseClause clause = elifs.get(i);
+            boolean last = i == elifs.size() - 1;
+            boolean moreAfter = !last || !ifStatement.elseBody().isEmpty();
 
-        int elifJumpPlaceholder = writer.getOffset();
-        for(IfElseClause clause : ifStatement.elifClauses()) {
             compileExpression(clause.condition());
             writer.writeOpcode(Opcode.JMP_IF_NOT);
-            elifJumpPlaceholder = writer.getOffset();
+            pendingFalseJump = writer.getOffset();
             writer.writeInt(0);
 
             compileStatements(clause.body());
 
-            writer.writeOpcode(Opcode.JMP);
-            jumpAddresses.add(writer.getOffset());
-            writer.writeInt(0);
-            int nextElifStartOffset = writer.getOffset();
-
-            writer.setIntAt(elifJumpPlaceholder, nextElifStartOffset);
+            if (moreAfter) {
+                writer.writeOpcode(Opcode.JMP);
+                endJumps.add(writer.getOffset());
+                writer.writeInt(0);
+            }
+            writer.setIntAt(pendingFalseJump, writer.getOffset());
         }
 
-        if(!ifStatement.elseBody().isEmpty()) {
-            int elseStartOffset = writer.getOffset();
-            compileStatements(ifStatement.elseBody());
-            writer.setIntAt(elifJumpPlaceholder, elseStartOffset);
+        // else
+        compileStatements(ifStatement.elseBody());               // leer = nichts
 
-        }
-
-        int endOffset = writer.getOffset();
-        for(int jumpAddress : jumpAddresses) {
-            writer.setIntAt(jumpAddress, endOffset);
-        }
+        int end = writer.getOffset();
+        for (int p : endJumps) writer.setIntAt(p, end);
     }
 
     private void compileForLoop(ForLoop forLoop) {
         RangeLiteral range = forLoop.range();
         String var = forLoop.variable();
+        boolean ascending = range.end() >= range.start();
 
         // i = start
         writer.writeOpcode(Opcode.DEFINE_TMP);
         writer.writeString(var);
         pushInt(range.start());
-        writer.writeOpcode(Opcode.STORE);
+        writer.writeOpcode(Opcode.STORE_TMP);
         writer.writeString(var);
 
         int loopStart = writer.getOffset();
@@ -166,7 +170,7 @@ public class Compiler {
         writer.writeOpcode(Opcode.LOAD);
         writer.writeString(var);
         pushInt(range.end());
-        writer.writeOpcode(Opcode.LTE);
+        writer.writeOpcode(ascending ? Opcode.LTE : Opcode.GTE);
         writer.writeOpcode(Opcode.JMP_IF_NOT);
         int exitJump = writer.getOffset();
         writer.writeInt(0);  // Placeholder
@@ -177,8 +181,8 @@ public class Compiler {
         writer.writeOpcode(Opcode.LOAD);
         writer.writeString(var);
         pushInt(1);
-        writer.writeOpcode(Opcode.ADD);
-        writer.writeOpcode(Opcode.STORE);
+        writer.writeOpcode(ascending ? Opcode.ADD : Opcode.SUB);
+        writer.writeOpcode(Opcode.STORE_TMP);
         writer.writeString(var);
 
         // Zurück zur Prüfung
@@ -237,7 +241,7 @@ public class Compiler {
             compileExpression(returnStatement.value());
         } else {
             writer.writeOpcode(Opcode.PUSH);
-            writer.writeByte((byte) PushType.NULL.ordinal());
+            writer.writeByte((byte) PushType.UNDEFINED.ordinal());
         }
         writer.writeOpcode(Opcode.RET);
     }
@@ -262,7 +266,7 @@ public class Compiler {
         else if(expression instanceof ArrayLiteral literal) compileArrayLiteral(literal);
         else if(expression instanceof MapLiteral literal) compileMapLiteral(literal);
         else if(expression instanceof InterpolatedString string) compileInterpolatedString(string);
-        else throw new RuntimeException("Unknown expression type: " + expression.getClass().getName());
+        else throw new CompileException("Unknown expression type: " + expression.getClass().getName());
     }
 
     private void compileAssignment(Assignment assignment) {
@@ -323,7 +327,7 @@ public class Compiler {
         Opcode opcode = switch (op.operator()) {
             case MINUS -> Opcode.NEG;
             case NOT -> Opcode.NOT;
-            default -> throw new IllegalArgumentException("Unknown unary operator: " + op.operator());
+            default -> throw new CompileException("Unknown unary operator: " + op.operator());
         };
         writer.writeOpcode(opcode);
     }
@@ -384,7 +388,7 @@ public class Compiler {
             }
 
             if (!first) {
-                writer.writeOpcode(Opcode.CONCAT);   // stack: [a, b] -> [str(a)+str(b)]
+                writer.writeOpcode(Opcode.ADD);   // stack: [a, b] -> [str(a)+str(b)]
             }
             first = false;
         }
@@ -393,7 +397,7 @@ public class Compiler {
         // Ohne CONCAT bliebe der Rohwert (z.B. Integer) stehen.
         if (parts.size() == 1 && parts.get(0).isExpression()) {
             pushString("");
-            writer.writeOpcode(Opcode.CONCAT);
+            writer.writeOpcode(Opcode.ADD);
         }
     }
 
@@ -424,7 +428,7 @@ public class Compiler {
             case AND -> Opcode.AND;
             case OR -> Opcode.OR;
             case NOT -> Opcode.NOT;
-            default -> throw new IllegalArgumentException("Unknown token type: " + tokenType);
+            default -> throw new CompileException("Unknown token type: " + tokenType);
         };
     }
 

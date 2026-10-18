@@ -19,6 +19,8 @@ public class Lexer {
         KEYWORDS.put("for", TokenType.FOR);
         KEYWORDS.put("return", TokenType.RETURN);
         KEYWORDS.put("null", TokenType.NULL);
+        KEYWORDS.put("true", TokenType.TRUE);
+        KEYWORDS.put("false", TokenType.FALSE);
     }
     private final String source;
     private int start;
