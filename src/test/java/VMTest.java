@@ -57,6 +57,8 @@ public class VMTest {
                 log #i["defined"]
                 rovar x = 1
                 log ({"a"={"b"="hi","c"=[add 1 2,"b"]}})["a"]["c"][0]{newline=false}
+                logf "lex %.2f ms\\n" ([1.0])
+                log $"hi\\nlol"
                 """;
 
         DebugVisualizer.println("Starting...");
@@ -72,7 +74,7 @@ public class VMTest {
         //System.out.println(Disassembler.disassemble(code));
 
         VM vm = new VM(new SimpleHost.Builder().addDefaultLibraries().build());
-        VM silentVM = new VM((n,a,o)-> StaticObjects.UNDEFINED);
+        //VM silentVM = new VM((n,a,o)-> StaticObjects.UNDEFINED);
 
         //for (int i = 0; i < 1000; i++) silentVM.run(code, new HashMap<>(), new HashMap<>());
         long t4 = System.nanoTime();

@@ -56,10 +56,10 @@ public class Parser {
                 result = parseVar (true, false);
             else if (match(TokenType.ROVAR))
                 result = parseVar (true, true);
-            else if (match(TokenType.FUNC))
-                result = parseGlobalFunction();
+            //else if (match(TokenType.FUNC))
+            //    result = parseGlobalFunction();
             else
-                throw error(peek(), "Expected 'var', 'rovar' or 'func'");
+                throw error(peek(), "Expected 'var' or 'rovar'");
 
             scope = previousScope;
             return result;
@@ -405,7 +405,7 @@ public class Parser {
         if(match(TokenType.NULL)) return new Literal(null);
         if(match(TokenType.INTEGER)) return new Literal(Integer.parseInt(previous().lexeme()));
         if(match(TokenType.DECIMAL)) return new Literal(Double.parseDouble(previous().lexeme()));
-        if(match(TokenType.STRING)) return new Literal(previous().lexeme().substring(1, previous().lexeme().length() - 1));
+        if(match(TokenType.STRING)) return new Literal(previous().lexeme().substring(1, previous().lexeme().length() - 1).replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r"));
         if(match(TokenType.INTERPOLATED_STRING)) return parseInterpolatedString(previous().lexeme());
         if(match(TokenType.LEFT_BRACKET)) return parseArrayLiteral();
         if(match(TokenType.LEFT_BRACE)) return parseMapLiteral();
@@ -514,7 +514,7 @@ public class Parser {
         while(i < literal.length()) {
             if(i < literal.length() - 1 && literal.charAt(i) == '$') {
                 if(!currentText.isEmpty()) {
-                    parts.add(new StringPart(false, currentText.toString(), null));
+                    parts.add(new StringPart(false, currentText.toString().replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r"), null));
                     currentText = new StringBuilder();
                 }
 
@@ -554,7 +554,7 @@ public class Parser {
             }
         }
         if(!currentText.isEmpty()) {
-            parts.add(new StringPart(false, currentText.toString(), null));
+            parts.add(new StringPart(false, currentText.toString().replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r"), null));
         }
 
         return new InterpolatedString(parts);

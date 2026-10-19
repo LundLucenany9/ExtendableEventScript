@@ -6,6 +6,7 @@ import de.lundlucenany9.runtime.Variable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class StandardMethods implements Library{
     @Override
@@ -14,13 +15,21 @@ public class StandardMethods implements Library{
     }
 
     @EESFunction
-    public void log(Object message, @EESOptional(name = "newline", type = EESOptional.Type.BOOLEAN, booleanValue = true) boolean newline) {
-        if(newline) message += "\n";
+    public void log(Object message, @EESOptional(name = "newline") Optional<Boolean> newline) {
+        boolean nl = newline.orElse(true);
+        if(nl) message += "\n";
         System.out.print(message);
     }
+
     @EESFunction
-    public void err(Object message, @EESOptional(name = "throw", type = EESOptional.Type.BOOLEAN) boolean throwException) {
-        if(throwException) throw new RuntimeException(message.toString());
+    public void logf(String format, List<Object> args) {
+        System.out.printf(format, args.toArray());
+    }
+
+    @EESFunction
+    public void err(Object message, @EESOptional(name = "throw") Optional<Boolean> throwException) {
+        boolean throwException_ = throwException.orElse(false);
+        if(throwException_) throw new RuntimeException(message.toString());
         System.err.println(message);
     }
 
@@ -50,6 +59,26 @@ public class StandardMethods implements Library{
         if(object instanceof List) return ((List<?>) object).size();
         if(object instanceof Map) return ((Map<?, ?>) object).size();
         throw new ScriptException("Cannot get length of " + object.getClass().getName());
+    }
+
+    @EESFunction
+    public int max(int a, int b) {
+        return Math.max(a, b);
+    }
+
+    @EESFunction
+    public int min(int a, int b) {
+        return Math.min(a, b);
+    }
+
+    @EESFunction
+    public int round(double x) {
+        return (int) Math.round(x);
+    }
+
+    @EESFunction
+    public double abs(double x) {
+        return Math.abs(x);
     }
 
 }

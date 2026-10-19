@@ -9,18 +9,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 public @interface EESOptional {
     String name();
-    String stringValue() default "";
-    int intValue() default 0;
-    boolean booleanValue() default false;
-    double doubleValue() default 0.0;
-
-    Type type();
-
-    enum Type {
-        STRING,
-        INT,
-        BOOLEAN,
-        DOUBLE,
-    }
 }
 

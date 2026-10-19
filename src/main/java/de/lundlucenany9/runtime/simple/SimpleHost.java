@@ -58,15 +58,14 @@ public final class SimpleHost implements Host {
                 Object value;
                 EESOptional optional = parameter.getAnnotation(EESOptional.class);
                 String name = optional.name();
-                if (opts.containsKey(name)) {
-                    value = opts.get(name);
+                if(parameter.getType() == Optional.class) {
+                    if (opts.containsKey(name)) {
+                        value = Optional.of(opts.get(name));
+                    } else {
+                        value = Optional.empty();
+                    }
                 } else {
-                    value = switch (optional.type()) {
-                        case STRING -> optional.stringValue();
-                        case INT -> optional.intValue();
-                        case BOOLEAN -> optional.booleanValue();
-                        case DOUBLE -> optional.doubleValue();
-                    };
+                    value = opts.getOrDefault(name, null);
                 }
                 params.add(value);
                 continue;
