@@ -1,6 +1,7 @@
 package de.lundlucenany9.main;
 
 
+import de.lundlucenany9.Compressor;
 import de.lundlucenany9.Lexer;
 import de.lundlucenany9.Parser;
 import de.lundlucenany9.Token;
@@ -17,83 +18,162 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        if(args.length < 2) {
-            System.out.println("No arguments given");
+        if (args.length == 0) {
             printUsage();
             System.exit(1);
         }
-        if(args[0].equals("-c") || args[0].equals("--compile")) {
-            String file = args[1];
-            String output = "script.eeb";
-            if(args.length > 2) {
-                if(args[2].equals("-o") || args[2].equals("--output")) {
-                    output = args[3];
-                }
-            }
-            try(InputStream in = new FileInputStream(file)) {
-                String code = new String(in.readAllBytes());
-                System.out.println("Lexing '" + file + "' ...");
-                List<Token> tokens = new Lexer(code).tokenize();
-                System.out.println("Parsing...");
-                Program program = new Parser(tokens).parse();
-                System.out.println("Compiling...");
-                byte[] executable = new Compiler().compile(program);
-                try(OutputStream out = new FileOutputStream(output)) {
-                    out.write(executable);
-                    System.out.println("Compiled to " + output);
-                }
-            }catch (IOException e) {
-                e.printStackTrace();
-                System.exit(1);
-            }
+
+        if (args[0].equals("-h") || args[0].equals("--help")) {
+            printUsage();
+            return;
         }
-        if(args[0].equals("-e") || args[0].equals("--execute")) {
-            String arg = args[1];
-            boolean debug = false;
-            if(arg.equals("-d") || arg.equals("--debug")) {
-                debug = true;
-                arg = args[2];
-                DebugVisualizer.show();
-                if(arg == null) {
+
+        if (args.length < 2) {
+            System.out.println("Missing file argument");
+            printUsage();
+            System.exit(1);
+        }
+        switch (args[0]) {
+            case "-c", "--compile" -> {
+                String file = args[1];
+                String output = "script.eex";
+                if (args.length > 2) {
+                    if (args[2].equals("-o") || args[2].equals("--output")) {
+                        if (args.length < 4) {
+                            System.out.println("Missing output file");
+                            printUsage();
+                            System.exit(1);
+                        }
+                        output = args[3];
+                    } else {
+                        System.out.println("Unknown argument: " + args[2]);
+                        printUsage();
+                        System.exit(1);
+                    }
+                }
+                try (InputStream in = new FileInputStream(file)) {
+                    String code = new String(in.readAllBytes());
+                    System.out.println("Lexing '" + file + "' ...");
+                    List<Token> tokens = new Lexer(code).tokenize();
+                    System.out.println("Parsing...");
+                    Program program = new Parser(tokens).parse();
+                    System.out.println("Compiling...");
+                    byte[] executable = new Compiler().compile(program);
+                    System.out.println("Compressing...");
+                    byte[] compressed = Compressor.compress(executable);
+                    try (OutputStream out = new FileOutputStream(output)) {
+                        out.write(compressed);
+                        System.out.println("Compiled to " + output);
+                    }
+                } catch (Exception e) {
+                    System.err.println("An error occurred: " + e.getMessage());
+                    System.exit(1);
+                }
+            }
+            case "-C", "--compile-only" -> {
+                String file = args[1];
+                String output = "script.eeb";
+                if (args.length > 2) {
+                    if (args[2].equals("-o") || args[2].equals("--output")) {
+                        if (args.length < 4) {
+                            System.out.println("Missing output file");
+                            printUsage();
+                            System.exit(1);
+                        }
+                        output = args[3];
+                    } else {
+                        System.out.println("Unknown argument: " + args[2]);
+                        printUsage();
+                        System.exit(1);
+                    }
+                }
+                try (InputStream in = new FileInputStream(file)) {
+                    String code = new String(in.readAllBytes());
+                    System.out.println("Lexing '" + file + "' ...");
+                    List<Token> tokens = new Lexer(code).tokenize();
+                    System.out.println("Parsing...");
+                    Program program = new Parser(tokens).parse();
+                    System.out.println("Compiling...");
+                    byte[] executable = new Compiler().compile(program);
+                    try (OutputStream out = new FileOutputStream(output)) {
+                        out.write(executable);
+                        System.out.println("Compiled to " + output);
+                    }
+                } catch (Exception e) {
+                    System.err.println("An error occurred: " + e.getMessage());
+                    System.exit(1);
+                }
+            }
+            case "-e", "--execute" -> {
+                String file = args[1];
+                if (file == null) {
                     System.out.println("No file given");
                     printUsage();
                     System.exit(1);
                 }
-            }
-            try(InputStream in = new FileInputStream(arg)) {
-                VM vm = new VM(SimpleHost.getStandardHost());
-                try {
-                    byte[] code = in.readAllBytes();
-                    if(debug) {
-                        DebugVisualizer.code(Disassembler.disassemble(code));
+
+                try (InputStream in = new FileInputStream(file)) {
+                    VM vm = new VM(SimpleHost.getStandardHost());
+                    try {
+                        byte[] code = in.readAllBytes();
+                        vm.run(code, new HashMap<>(), new HashMap<>());
+                    } catch (Exception e) {
+                        System.err.println("An error occurred: " + e.getMessage());
+                        System.exit(1);
                     }
-                    vm.run(code, new HashMap<>(), new HashMap<>());
-                }catch (Exception e) {
-                    if(debug) {
-                        DebugVisualizer.println(e.getMessage());
-                    } else{
-                        System.out.println("An error occurred: " + e.getMessage());
-                    }
+                } catch (Exception e) {
+                    System.err.println("An error occurred: " + e.getMessage());
+                    System.exit(1);
                 }
-                if(debug)
-                    while (true);
-            }catch (IOException e) {
-                e.printStackTrace();
-                System.exit(1);
+            }
+            case "-d", "--debug" -> {
+                String file = args[1];
+                System.out.println("Opening debugger...");
+                DebugVisualizer.show();
+
+                try (InputStream in = new FileInputStream(file)) {
+                    System.out.println("Reading file...");
+                    byte[] code = in.readAllBytes();
+
+                    if (file.endsWith(".eex")) {
+                        System.out.println("Decompressing...");
+                        code = Compressor.decompress(code);
+                    }
+
+                    System.out.println("Disassembling...");
+                    DebugVisualizer.code(Disassembler.disassemble(code));
+
+                    System.out.println("Running VM...");
+                    VM vm = new VM(SimpleHost.getStandardHost());
+                    vm.run(code, new HashMap<>(), new HashMap<>());
+
+                    System.out.println("VM finished.");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    DebugVisualizer.println(e.toString());
+                }
+            }
+            default -> {
+                System.out.println("Invalid option: " + args[0]);
+                printUsage();
             }
         }
     }
 
     private static void printUsage() {
         System.out.println("""
-                USAGE:
-                  java -jar EEScript.jar
-                 \s
-                  Arguments:
-                    -c | --compile <file> Compile script
-                      -o | --output <file> Output file (default: script.eeb)
-                    -e | --execute [<script>] Execute script
-                      -d | --debug <script> Execute script and show debug information
-               """);
+            USAGE:
+              java -jar EEScript.jar <option> [arguments]
+
+            Options:
+              -c, --compile <file>         Compile script and compress
+                -o, --output <file>        Output file (default: script.eex)
+              -C, --compile-only <file>    Compile script without compressing
+                -o, --output <file>        Output file (default: script.eeb)
+              -e, --execute <script>       Execute script
+              -d, --debug <script>         Execute script with debug information
+
+              -h, --help                   Show this help message
+            """);
     }
 }

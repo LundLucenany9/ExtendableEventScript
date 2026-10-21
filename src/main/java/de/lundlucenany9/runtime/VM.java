@@ -1,10 +1,12 @@
 package de.lundlucenany9.runtime;
 
+import de.lundlucenany9.Compressor;
 import de.lundlucenany9.ast.FunctionParameter;
 import de.lundlucenany9.compiler.Opcode;
 import de.lundlucenany9.compiler.PushType;
 import de.lundlucenany9.debug.DebugVisualizer;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -31,6 +33,15 @@ public class VM {
 
         byte[] magic = new byte[4];
         buf.get(magic);
+
+        if(Arrays.equals(magic, new byte[]{'E', 'E', 'C', 0})) {
+            try {
+                buf = ByteBuffer.wrap(Compressor.decompress(bytecode));
+                buf.get(magic);
+            } catch (IOException e) {
+                throw new ScriptException("Cannot decompress bytecode");
+            }
+        }
 
         if (!Arrays.equals(magic, new byte[]{'E', 'E', 'S', 0})) {
             throw new ScriptException("Invalid bytecode");

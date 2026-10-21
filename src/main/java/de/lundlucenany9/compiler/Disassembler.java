@@ -1,8 +1,13 @@
 package de.lundlucenany9.compiler;
 
+import de.lundlucenany9.Compressor;
+import de.lundlucenany9.runtime.ScriptException;
+
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 
@@ -13,6 +18,17 @@ public class Disassembler {
 
         byte[] magic = new byte[4];
         buf.get(magic);
+        if(Arrays.equals(magic, new byte[]{'E', 'E', 'C', 0})) {
+            try {
+                buf = ByteBuffer.wrap(Compressor.decompress(code));
+                buf.get(magic);
+            } catch (IOException e) {
+                throw new ScriptException("Cannot decompress bytecode");
+            }
+        }
+        if (!Arrays.equals(magic, new byte[]{'E', 'E', 'S', 0})) {
+            throw new ScriptException("Invalid bytecode");
+        }
         int version = buf.get();
         sb.append("; version ").append(version).append('\n');
         
