@@ -18,12 +18,9 @@ public final class SimpleScriptHost implements ScriptHost {
     @Override
     public Object call(String name, List<Object> args, Map<String, Object> opts) {
         if(name.contains(".")) {
-            String[] parts = name.split("\\.", -1);
-            if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
-                throw new MethodResolutionError("Invalid method name: " + name);
-            }
-            String library = parts[0];
-            name = parts[1];
+            int sep = name.lastIndexOf(".");
+            String library = name.substring(0, sep);
+            name = name.substring(sep + 1);
             String finalName = name;
             Optional<EESMethod> method = methods.stream().filter(e-> e.libraryName().equals(library) && e.methodName().equals(finalName)).findFirst();
             Method m = method.map(EESMethod::method).orElse(null);
@@ -78,10 +75,10 @@ public final class SimpleScriptHost implements ScriptHost {
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             throw new MethodResolutionError(
-                    cause != null ? cause.getMessage() : e.getMessage()
+                    cause != null ? cause : e
             );
         } catch (ReflectiveOperationException | IllegalArgumentException e) {
-            throw new MethodResolutionError(e.getMessage());
+            throw new MethodResolutionError(e);
         }
     }
 }

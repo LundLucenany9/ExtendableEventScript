@@ -3,12 +3,15 @@ package de.lundlucenany9.compiler;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BytecodeWriter {
     private final ByteArrayOutputStream buffer;
     private final DataOutputStream out;
+
+    private final List<String> strings = new ArrayList<>();
 
     public BytecodeWriter() {
         buffer = new ByteArrayOutputStream();
@@ -69,9 +72,22 @@ public class BytecodeWriter {
 
     public void writeString(String s) {
         try {
-            byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-            out.writeShort(bytes.length);
-            out.write(bytes);
+            int index = strings.indexOf(s);
+
+            if (index == -1) {
+                if (strings.size() > 0xFFFF) {
+                    throw new CompileException("Too many strings");
+                }
+
+                index = strings.size();
+                strings.add(s);
+            }
+
+            if (index > 0xFFFF) {
+                throw new CompileException("String pool index too large");
+            }
+
+            out.writeShort(index);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -106,12 +122,43 @@ public class BytecodeWriter {
         }
     }
 
+    private byte[] createPrefix() {
+        try {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            DataOutputStream out = new DataOutputStream(buffer);
+
+            out.writeBytes("EES\0");
+            out.writeByte((byte) 0x01);
+
+            out.writeShort(strings.size());
+            for (String s : strings) {
+                byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+
+                out.writeShort(bytes.length);
+                out.write(bytes);
+            }
+
+            out.flush();
+            return buffer.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public byte[] toByteArray() {
         try {
             out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return buffer.toByteArray();
+
+        byte[] prefix = createPrefix();
+        byte[] body = buffer.toByteArray();
+        byte[] result = new byte[prefix.length + body.length];
+
+        System.arraycopy(prefix, 0, result, 0, prefix.length);
+        System.arraycopy(body, 0, result, prefix.length, body.length);
+
+        return result;
     }
 }

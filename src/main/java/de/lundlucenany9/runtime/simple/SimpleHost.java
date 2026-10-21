@@ -1,6 +1,7 @@
 package de.lundlucenany9.runtime.simple;
 
 import de.lundlucenany9.runtime.Host;
+import de.lundlucenany9.runtime.ImportException;
 import de.lundlucenany9.runtime.ScriptHost;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -15,8 +16,14 @@ public final class SimpleHost implements Host {
         this.libraries = libraries;
     }
 
+    public static SimpleHost getStandardHost() {
+        return new Builder().addDefaultLibraries().build();
+    }
+
     @Override
     public ScriptHost toScriptHost(List<String> imports) {
+        if(imports.stream().anyMatch(e->!this.libraries.containsKey(e)))
+            throw new ImportException("Library not found: " + imports.stream().filter(e->!this.libraries.containsKey(e)).findFirst().orElse(""));
         Map<String, Library> libraries = this.libraries.entrySet().stream().filter(e->imports.contains(e.getKey())).collect(HashMap::new, (m, e)->m.put(e.getKey(), e.getValue()), HashMap::putAll);
         List<EESMethod> methods = this.methods.stream().filter(e->imports.contains(e.libraryName())).toList();
         return new SimpleScriptHost(methods, libraries);
@@ -29,6 +36,7 @@ public final class SimpleHost implements Host {
 
         public Builder addDefaultLibraries() {
             registerLibrary(new StandardMethods());
+            registerLibrary(new StandardIO());
             return this;
         }
 

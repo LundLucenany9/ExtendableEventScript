@@ -19,3 +19,8 @@ tasks.test {
     useJUnitPlatform()
 
 }
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "de.lundlucenany9.main.Main"
+    }
+}

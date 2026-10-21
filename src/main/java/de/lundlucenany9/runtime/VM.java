@@ -6,6 +6,7 @@ import de.lundlucenany9.compiler.PushType;
 import de.lundlucenany9.debug.DebugVisualizer;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class VM {
@@ -24,20 +25,63 @@ public class VM {
 
     public void run(byte[] bytecode, Map<String, Variable> args, Map<String, Variable> event) {
         List<String> imports = new ArrayList<>();
+        List<String> strings = new ArrayList<>();
+
         ByteBuffer buf = ByteBuffer.wrap(bytecode);
-        buf.position(5);
+
+        byte[] magic = new byte[4];
+        buf.get(magic);
+
+        if (!Arrays.equals(magic, new byte[]{'E', 'E', 'S', 0})) {
+            throw new ScriptException("Invalid bytecode");
+        }
+        if(buf.get() != 1) throw new ScriptException("Invalid bytecode version");
+
+        int stringsLength = Short.toUnsignedInt(buf.getShort());
+
+        for (int i = 0; i < stringsLength; i++) {
+            int len = Short.toUnsignedInt(buf.getShort());
+
+            byte[] b = new byte[len];
+            buf.get(b);
+            String s = new String(b, StandardCharsets.UTF_8);
+            DebugVisualizer.stack(s);
+            strings.add(s);
+        }
+        int codestart = buf.position();
+        DebugVisualizer.println("Code starts at " + buf.position());
+        
         Frame f = new Frame(event, args, null);
 
-        while(buf.hasRemaining() && !Thread.currentThread().isInterrupted() && opcodes[buf.get()] == Opcode.IMPORT) {
-            imports.add(readString(buf));
+        while (buf.hasRemaining()
+               && !Thread.currentThread().isInterrupted()
+               && opcodes[Byte.toUnsignedInt(buf.get(buf.position()))] == Opcode.IMPORT) {
+
+            buf.get(); // IMPORT-Opcode konsumieren
+            imports.add(readString(buf, strings));
         }
+        DebugVisualizer.println("Code after imports: " + buf.position() + " / " + bytecode.length);
         ScriptHost scHost = host.toScriptHost(imports);
 
         while(buf.hasRemaining() && !Thread.currentThread().isInterrupted()) {
-            Opcode op = opcodes[buf.get()];
+            int pss = buf.position();
+            int opcode = Byte.toUnsignedInt(buf.get());
+
+            DebugVisualizer.println(
+                    "Opcode at " + pss + ": " + opcode + " (" + opcodes[opcode] + ")"
+            );
+
+            Opcode op = opcodes[opcode];
             //System.out.println("op = " + op);
             switch (op) {
-                case PUSH -> f.push(readPushValue(buf, f));
+                case PUSH -> {
+                    int pos = buf.position();
+                    Object value = readPushValue(buf, f, strings);
+                    DebugVisualizer.println(
+                            "PUSH at " + pos + ": " + value
+                    );
+                    f.push(value);
+                }
                 case POP -> {
                     try {
                         f.pop();
@@ -46,12 +90,12 @@ public class VM {
                         Thread.currentThread().interrupt();
                     }
                 }
-                case DEFINE_TMP -> {String n = readString(buf); f.define(n, Variable.readOnly(null)); f.setTmp(n);}
-                case UNDEFINE_TMP -> {String n = readString(buf); f.undefine(n); f.removeTmp(n);}
-                case LOAD -> f.push(resolve(f, readString(buf)));
-                case LOAD_REF -> f.push(resolveRef(f, readString(buf)));
-                case STORE -> store(f, readString(buf), f.pop());
-                case STORE_TMP -> storeTMP(f, readString(buf), f.pop());
+                case DEFINE_TMP -> {String n = readString(buf, strings); f.define(n, Variable.readOnly(null)); f.setTmp(n);}
+                case UNDEFINE_TMP -> {String n = readString(buf, strings); f.undefine(n); f.removeTmp(n);}
+                case LOAD -> f.push(resolve(f, readString(buf, strings)));
+                case LOAD_REF -> f.push(resolveRef(f, readString(buf, strings)));
+                case STORE -> store(f, readString(buf, strings), f.pop());
+                case STORE_TMP -> storeTMP(f, readString(buf, strings), f.pop());
                 case ADD -> add(f, f.pop(), f.pop());
                 case SUB -> sub(f, f.pop(), f.pop());
                 case MUL -> mul(f, f.pop(), f.pop());
@@ -65,9 +109,9 @@ public class VM {
                 case AND -> {Object b = f.pop(); Object a = f.pop(); f.push(truthy(a) && truthy(b));}
                 case OR -> {Object b = f.pop(); Object a = f.pop(); f.push(truthy(a) || truthy(b));}
                 case NOT -> f.push(!truthy(f.pop()));
-                case JMP -> buf.position(buf.getInt());
-                case JMP_IF_NOT -> {int t = buf.getInt(); if(!truthy(f.pop())) buf.position(t);}
-                case JMP_IF -> {int t = buf.getInt(); if(truthy(f.pop())) buf.position(t);}
+                case JMP -> buf.position(buf.getInt() + codestart);
+                case JMP_IF_NOT -> {int t = buf.getInt() + codestart ; if(!truthy(f.pop())) buf.position(t);}
+                case JMP_IF -> {int t = buf.getInt() + codestart; if(truthy(f.pop())) buf.position(t);}
                 case DUP -> f.push(f.peek());
                 case RET -> {
                     Object ret = f.pop();
@@ -132,7 +176,7 @@ public class VM {
                 }
                 case DEFINE_VAR -> {
                     boolean ro = buf.get() == 1;
-                    String name = readString(buf);
+                    String name = readString(buf, strings);
                     Object value = f.pop();
                     if(value == StaticObjects.UNDEFINED) throw new ScriptException("Cannot define undefined variable");
                     int dot = name.indexOf('.');
@@ -148,24 +192,24 @@ public class VM {
                     }
                 }
                 case DEFINE_FUNC -> {
-                    String name = readString(buf);
+                    String name = readString(buf, strings);
 
                     int argc = buf.get() & 0xFF;
                     List<FunctionParameter> params = new ArrayList<>();
                     for (int i = 0; i < argc; i++) {
                         boolean isRef = buf.get() == 1;
-                        params.add(new FunctionParameter(readString(buf), isRef));
+                        params.add(new FunctionParameter(readString(buf, strings), isRef));
                     }
 
                     int optc = buf.get() & 0xFF;
                     String[] optNames = new String[optc];
-                    for (int i = 0; i < optc; i++) optNames[i] = readString(buf);
+                    for (int i = 0; i < optc; i++) optNames[i] = readString(buf, strings);
                     Object[] optValues = new Object[optc];
                     for (int i = optc - 1; i >= 0; i--) optValues[i] = f.pop();   // umgekehrt zum Pushen
                     Map<String, Object> defaults = new LinkedHashMap<>();
                     for (int i = 0; i < optc; i++) defaults.put(optNames[i], optValues[i]);
 
-                    int end = buf.getInt();
+                    int end = buf.getInt() + codestart;
                     int bodyStart = buf.position();
                     Function fn = new Function(params, defaults, bytecode, bodyStart, f);
 
@@ -179,14 +223,20 @@ public class VM {
                     buf.position(end);          // Body überspringen
                 }
                 case CALL -> {
-                    String name = readString(buf);
-                    int argc = buf.get(); int optc = buf.get();
+                    String name = readString(buf, strings);
+                    int argc = Byte.toUnsignedInt(buf.get());
+                    int optc = Byte.toUnsignedInt(buf.get());
                     String[] optNames = new String[optc];
-                    for ( int i = 0; i < optc; i++ ) optNames[i] = readString(buf);
+                    for ( int i = 0; i < optc; i++ ) optNames[i] = readString(buf, strings);
                     Map<String, Object> opts = new HashMap<>();
                     for ( int i = optc - 1 ; i >= 0; i-- ) opts.put(optNames[i], f.pop());
                     Object[] argv = new Object[argc];
                     for (int i = argc - 1; i >= 0; i--) argv[i] = f.pop();
+                    DebugVisualizer.println(
+                            "CALL name=" + name
+                            + ", args=" + Arrays.toString(argv)
+                            + ", opts=" + opts
+                    );
                     if(f.hasFunction(name)) {
                         Function fn = f.getFunction(name);
                         f = new Frame(null, null, fn.definingFrame());
@@ -203,6 +253,7 @@ public class VM {
                         f.push(scHost.call(name, Arrays.asList(argv), opts));
                     }
                 }
+
                 default -> throw new ScriptException("Unknown opcode: " + op);
             }
         }
@@ -319,19 +370,35 @@ public class VM {
         return globals.getOrDefault(s, Variable.undefined());
     }
 
-    private String readString(ByteBuffer buf) {
-        short len = buf.getShort();
-        byte[] b = new byte[len];
-        buf.get(b);
-        return new String(b);
+    private String readString(ByteBuffer buf, List<String> strings) {
+        //short len = buf.getShort();
+        //byte[] b = new byte[len];
+        //buf.get(b);
+        //return new String(b);
+        int loc = buf.getShort() & 0xFFFF;
+        String s = strings.get(loc);
+        DebugVisualizer.printsln("[" + loc + "] " + s);
+        return s;
     }
     
-    private Object readPushValue(ByteBuffer buf, Frame f) {
-        PushType type = PushType.values()[buf.get()];
+    private Object readPushValue(ByteBuffer buf, Frame f, List<String> strings) {
+        int typeId = Byte.toUnsignedInt(buf.get());
+        PushType type = PushType.values()[typeId];
+
+        DebugVisualizer.println(
+                "PushType at " + (buf.position() - 1) + ": " + type
+        );
         return switch (type) {
             case INTEGER -> buf.getInt();
             case FLOAT -> buf.getDouble();
-            case STRING -> readString(buf);
+            case STRING -> {
+                int index = Short.toUnsignedInt(buf.getShort());
+                String value = strings.get(index);
+                DebugVisualizer.println(
+                        "PUSH STRING index=" + index + ", value=" + value
+                );
+                yield value;
+            }
             case NULL -> StaticObjects.NULL;
             case UNDEFINED -> StaticObjects.UNDEFINED;
             case BOOLEAN -> buf.get() == 1;

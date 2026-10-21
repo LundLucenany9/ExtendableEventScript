@@ -3,6 +3,7 @@ import de.lundlucenany9.Parser;
 import de.lundlucenany9.Token;
 import de.lundlucenany9.ast.Program;
 import de.lundlucenany9.compiler.Compiler;
+import de.lundlucenany9.compiler.Disassembler;
 import de.lundlucenany9.debug.DebugVisualizer;
 import de.lundlucenany9.runtime.Host;
 import de.lundlucenany9.runtime.StaticObjects;
@@ -10,27 +11,31 @@ import de.lundlucenany9.runtime.VM;
 import de.lundlucenany9.runtime.simple.SimpleHost;
 import org.junit.jupiter.api.Test;
 
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 
 
 public class VMTest {
     @Test
-    public void testVM() {
+    public void testVM() throws InterruptedException {
         Host host = im -> (name, args, opts) ->
             {
                 if(name.equals("print")) {
                     if(opts.containsKey("newline") && !(boolean) opts.get("newline"))
                         //System.out.print(args.get(0));
-                        DebugVisualizer.println(args.get(0).toString());
+                        DebugVisualizer.stack(args.get(0).toString());
                     else
-                        DebugVisualizer.println(args.get(0).toString());
+                        DebugVisualizer.stack(args.get(0).toString());
                     return StaticObjects.UNDEFINED;
                 }
                 return StaticObjects.UNDEFINED;
             };
         String source = """
                 import std
+                import std.io
                 
                 log "Hello World"
                 for rovar i -> 0-10
@@ -59,11 +64,13 @@ public class VMTest {
                 log #i["defined"]
                 rovar x = 1
                 log ({"a"={"b"="hi","c"=[add 1 2,"b"]}})["a"]["c"][0]{newline=false}
-                logf "lex %.2f ms\\n" ([1.0])
+                logf "lex %.2f ms, parse %.2f\\n" ([1.0, 2.0])
                 log $"hi\\nlol"
+                var name = input "Enter your name: "
+                writeln $"Hello, $name!"
                 """;
 
-        //DebugVisualizer.println("Starting...");
+        DebugVisualizer.stack("Starting...");
         long t0 = System.nanoTime();
         List<Token> tokens = new Lexer(source).tokenize();
         long t1 = System.nanoTime();
@@ -72,8 +79,13 @@ public class VMTest {
         byte[] code = new Compiler().compile(program);
         long t3 = System.nanoTime();
 
-        //System.out.println(HexFormat.ofDelimiter(" ").formatHex(code, 430, 450));
-        //System.out.println(Disassembler.disassemble(code));
+        //System.out.println(HexFormat.ofDelimiter(" ").formatHex(code));
+        try(OutputStream os = new FileOutputStream("test.eeb")) {
+            os.write(code);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        DebugVisualizer.code(Disassembler.disassemble(code));
 
         VM vm = new VM(new SimpleHost.Builder().addDefaultLibraries().build());
         //VM silentVM = new VM((n,a,o)-> StaticObjects.UNDEFINED);
@@ -81,7 +93,23 @@ public class VMTest {
         //for (int i = 0; i < 1000; i++) silentVM.run(code, new HashMap<>(), new HashMap<>());
         long t4 = System.nanoTime();
         //for (int i = 0; i < 1000; i++) silentVM.run(code);
-        vm.run(code, new HashMap<>(), new HashMap<>());
+        try {
+            vm.run(code, new HashMap<>(), new HashMap<>());
+        } catch (Exception e) {
+            DebugVisualizer.println(e.getMessage());
+            /*DebugVisualizer.error(e.getStackTrace().length == 0 ? "" :
+                    Arrays.stream(e.getStackTrace())
+                            .map(StackTraceElement::toString)
+                            .collect(StringBuilder::new,
+                                    (b, s) -> b.append(s).append('\n'),
+                                    StringBuilder::append)
+                            .toString());
+             */
+            e.printStackTrace();
+            //assert false;
+            DebugVisualizer.show();
+            while(true);
+        }
         long t5 = System.nanoTime();
         System.out.printf("lex %.2f ms, parse %.2f ms, compile %.2f ms, vm %.4f ms/run%n",
                 (t1-t0)/1e6, (t2-t1)/1e6, (t3-t2)/1e6, (t5-t4)/1e6);

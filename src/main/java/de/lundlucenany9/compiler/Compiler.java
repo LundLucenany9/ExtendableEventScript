@@ -1,5 +1,7 @@
 package de.lundlucenany9.compiler;
 
+import de.lundlucenany9.Lexer;
+import de.lundlucenany9.Parser;
 import de.lundlucenany9.TokenType;
 import de.lundlucenany9.ast.ExpressionNode;
 import de.lundlucenany9.ast.FunctionParameter;
@@ -22,11 +24,14 @@ public class Compiler {
     }
 
     public byte[] compile(Program program) {
-        writer.writeBytes("EES\0");
-        writer.writeByte((byte) 0x01);
+
         compileImports(program.getImports());
         compileStatements(program.getStatements());
         return writer.toByteArray();
+    }
+
+    public byte[] compile(String source) {
+        return compile(new Parser(new Lexer(source).tokenize()).parse());
     }
 
     private void compileImports(List<ImportStatement> statements) {
