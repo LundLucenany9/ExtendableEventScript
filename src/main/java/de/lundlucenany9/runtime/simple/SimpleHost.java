@@ -40,7 +40,7 @@ public final class SimpleHost implements Host {
             return this;
         }
 
-        public void registerLibrary(Library library) {
+        public Builder registerLibrary(Library library) {
             String name = library.getName();
 
             if (libraries.putIfAbsent(name, library) != null) {
@@ -48,6 +48,7 @@ public final class SimpleHost implements Host {
                         "Library with name " + name + " already exists"
                 );
             }
+            return this;
         }
 
         public SimpleHost build() {
