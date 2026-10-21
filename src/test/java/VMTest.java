@@ -17,7 +17,7 @@ import java.util.List;
 public class VMTest {
     @Test
     public void testVM() {
-        Host host = (name, args, opts) ->
+        Host host = im -> (name, args, opts) ->
             {
                 if(name.equals("print")) {
                     if(opts.containsKey("newline") && !(boolean) opts.get("newline"))
@@ -30,6 +30,8 @@ public class VMTest {
                 return StaticObjects.UNDEFINED;
             };
         String source = """
+                import std
+                
                 log "Hello World"
                 for rovar i -> 0-10
                     log $"i is $($i + 1)"
@@ -61,7 +63,7 @@ public class VMTest {
                 log $"hi\\nlol"
                 """;
 
-        DebugVisualizer.println("Starting...");
+        //DebugVisualizer.println("Starting...");
         long t0 = System.nanoTime();
         List<Token> tokens = new Lexer(source).tokenize();
         long t1 = System.nanoTime();

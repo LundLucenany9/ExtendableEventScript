@@ -39,9 +39,12 @@ public class Parser {
 
 
     private ImportStatement parseImport() {
-        String module = consume(TokenType.IDENTIFIER, "Expected module name").lexeme();
+        StringBuilder module = new StringBuilder(consume(TokenType.IDENTIFIER, "Expected module name").lexeme());
+        while (match(TokenType.DOT)) {
+            module.append(".").append(consume(TokenType.IDENTIFIER, "Expected module name").lexeme());
+        }
         skipNewlines();
-        return new ImportStatement(module);
+        return new ImportStatement(module.toString());
     }
 
     private Statement parseStatement() {

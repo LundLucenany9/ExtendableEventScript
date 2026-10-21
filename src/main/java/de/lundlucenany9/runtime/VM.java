@@ -15,20 +15,24 @@ public class VM {
     private final Map<String, Variable> globals;
 
 
-    private final Map<String, Function> globalFunctions;
     private final Deque<Integer> stack = new ArrayDeque<>();
     
     public VM(Host host) {
         this.host = host;
         this.globals = new HashMap<>();
-        this.globalFunctions = new HashMap<>();
     }
 
     public void run(byte[] bytecode, Map<String, Variable> args, Map<String, Variable> event) {
+        List<String> imports = new ArrayList<>();
         ByteBuffer buf = ByteBuffer.wrap(bytecode);
         buf.position(5);
         Frame f = new Frame(event, args, null);
-        
+
+        while(buf.hasRemaining() && !Thread.currentThread().isInterrupted() && opcodes[buf.get()] == Opcode.IMPORT) {
+            imports.add(readString(buf));
+        }
+        ScriptHost scHost = host.toScriptHost(imports);
+
         while(buf.hasRemaining() && !Thread.currentThread().isInterrupted()) {
             Opcode op = opcodes[buf.get()];
             //System.out.println("op = " + op);
@@ -167,10 +171,10 @@ public class VM {
 
                     int dot = name.indexOf('.');
                     String scope = name.substring(0, dot), fnName = name.substring(dot + 1);
-                    switch (scope) {
-                        case "glob"  -> globalFunctions.put(fnName, fn);
-                        case "local" -> f.defineFunction(fnName, fn);
-                        default      -> throw new ScriptException("Unknown function scope: " + scope);
+                    if (scope.equals("local")) {
+                        f.defineFunction(fnName, fn);
+                    } else {
+                        throw new ScriptException("Unknown function scope: " + scope);
                     }
                     buf.position(end);          // Body überspringen
                 }
@@ -196,7 +200,7 @@ public class VM {
                         stack.push(buf.position());
                         buf.position(fn.bodyStart());
                     }else {
-                        f.push(host.call(name, Arrays.asList(argv), opts));
+                        f.push(scHost.call(name, Arrays.asList(argv), opts));
                     }
                 }
                 default -> throw new ScriptException("Unknown opcode: " + op);

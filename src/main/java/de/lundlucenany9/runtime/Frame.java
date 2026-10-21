@@ -28,13 +28,13 @@ public final class Frame {
     }
 
     public void push(Object value) {
-        DebugVisualizer.draw("[" + frameId + "] " +  stack.size() + "  Pushing " + value + " to stack");
+        //DebugVisualizer.draw("[" + frameId + "] " +  stack.size() + "  Pushing " + value + " to stack");
         stack.push(value);
-        DebugVisualizer.draw("[" + frameId + "] " + stack.size() + "  Stack now: " + stack);
+        //DebugVisualizer.draw("[" + frameId + "] " + stack.size() + "  Stack now: " + stack);
     }
 
     public Object pop() {
-        DebugVisualizer.draw("[" + frameId + "] " + stack.size() + "  Popping " + stack.peek() + " from stack");
+        //DebugVisualizer.draw("[" + frameId + "] " + stack.size() + "  Popping " + stack.peek() + " from stack");
         return stack.pop();
     }
 
