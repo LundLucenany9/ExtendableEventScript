@@ -11,6 +11,8 @@ add_executable(ees
         src/main.cpp
         include/ees/TokenType.h
         include/ees/Token.h
+        include/ees/ast/Ast.h
+        src/Parser.cpp
 )
 
 target_include_directories(ees PRIVATE
