@@ -19,7 +19,7 @@ class Lexer {
         std::string source;
         std::vector<Token> tokens;
 
-        std::vector<int> indents;
+        std::vector<int> indents{0};
 
         std::size_t start = 0;
         std::size_t current = 0;

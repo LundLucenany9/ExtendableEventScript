@@ -9,7 +9,14 @@
 #include <stdexcept>
 #include <unordered_map>
 
-Lexer::Lexer(std::string  source) : source(std::move(source.replace(source.begin(), source.end(), "\r\n", "\n"))) {}
+Lexer::Lexer(std::string source) {
+    size_t pos = 0;
+    while ((pos = source.find("\r\n", pos)) != std::string::npos) {
+        source.replace(pos, 2, "\n");
+        pos += 1;
+    }
+    this->source = std::move(source);
+}
 
 bool Lexer::isAtEnd() const {
     return current >= source.size();
@@ -84,10 +91,7 @@ void Lexer::skipWhitespace() {
 }
 
 void Lexer::scanIdentifier() {
-    while (std::isalnum(
-            static_cast<unsigned char>(peek())
-            || peek() == '_'
-        )) {
+    while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') {
         advance();
     }
     const std::string text = source.substr(start, current - start);
@@ -119,6 +123,7 @@ void Lexer::scanIdentifier() {
 }
 
 void Lexer::scanNumber() {
+    if (isAtEnd()) return;
     while (std::isdigit(
             static_cast<unsigned char>(peek())
         )) {
@@ -180,10 +185,8 @@ void Lexer::scanToken() {
                 break;
             }
 
-            const int previous = indents.back();
-            indents.pop_back();
 
-            if (indentation > previous) {
+            if (const int previous = indents.back(); indentation > previous) {
                 indents.push_back(indentation);
                 addIndent();
             } else if (indentation < previous) {
@@ -254,9 +257,12 @@ void Lexer::scanToken() {
             else if (isIdentifierStart(c))
                 scanIdentifier();
             else {
-                std::string err = "Unexpected character: ";
-                err += c;
-                throw std::runtime_error(err);
+                throw std::runtime_error(
+                    "Unexpected character (ASCII " +
+                    std::to_string(static_cast<unsigned char>(c)) +
+                    ") at line " + std::to_string(line) +
+                    ", column " + std::to_string(column)
+                );
             }
     }
 }
@@ -268,8 +274,10 @@ bool Lexer::isIdentifierStart(const char c) {
 }
 
 std::vector<Token> Lexer::scanTokens() {
-    while (current < source.length())
+    while (!isAtEnd()) {
+        start = current;
         scanToken();
+    }
     while (indents.size() > 1) {
         indents.pop_back();
         addDedent();
