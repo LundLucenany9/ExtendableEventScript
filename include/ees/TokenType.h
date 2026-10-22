@@ -5,6 +5,7 @@
 #pragma once
 
 enum class TokenType {
+    IMPORT,
     GLOBAL,
     VAR,
     ROVAR,
