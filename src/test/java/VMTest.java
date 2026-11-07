@@ -66,7 +66,7 @@ public class VMTest {
                 log ({"a"={"b"="hi","c"=[add 1 2,"b"]}})["a"]["c"][0]{newline=false}
                 logf "lex %.2f ms, parse %.2f\\n" ([1.0, 2.0])
                 log $"hi\\nlol"
-                var name = input "Enter your name: "
+                //var name = input "Enter your name: "
                 writeln $"Hello, $name!"
                 """;
 
@@ -107,8 +107,8 @@ public class VMTest {
              */
             e.printStackTrace();
             //assert false;
-            DebugVisualizer.show();
-            while(true);
+            //DebugVisualizer.show();
+            //while(true);
         }
         long t5 = System.nanoTime();
         System.out.printf("lex %.2f ms, parse %.2f ms, compile %.2f ms, vm %.4f ms/run%n",

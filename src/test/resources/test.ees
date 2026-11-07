@@ -2,9 +2,6 @@ import minecraft
 
 global var event_count = 0
 
-global function debug(text)
-  print $"[DEBUG] $text"
-
 function handle(name)
   $event_count = $glob.event_count + 1
   var d = null
