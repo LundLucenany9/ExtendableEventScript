@@ -1,4 +1,5 @@
 # ExtendableEventScript (EES)
+[![](https://jitpack.io/v/LundLucenany9/ExtendableEventScript.svg)](https://jitpack.io/#LundLucenany9/ExtendableEventScript)
 
 ExtendableEventScript (EES) is an extensible scripting language implemented in Java. It provides its own lexer, parser, compiler, bytecode format, and virtual machine, allowing scripts to be compiled and executed by Java applications.
 
