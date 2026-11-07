@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "de.LundLucenany9"
-version = "1.0.3"
+version = "1.0.4"
 
 repositories {
     mavenCentral()
@@ -33,7 +33,7 @@ tasks.jar {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
