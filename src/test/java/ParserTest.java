@@ -1,7 +1,7 @@
-import de.lundlucenany9.Lexer;
-import de.lundlucenany9.Parser;
-import de.lundlucenany9.ast.Program;
-import de.lundlucenany9.ast.Statement;
+import de.lundlucenany9.ees.Lexer;
+import de.lundlucenany9.ees.Parser;
+import de.lundlucenany9.ees.ast.Program;
+import de.lundlucenany9.ees.ast.Statement;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

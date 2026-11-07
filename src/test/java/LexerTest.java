@@ -1,6 +1,6 @@
 
-import de.lundlucenany9.Lexer;
-import de.lundlucenany9.Token;
+import de.lundlucenany9.ees.Lexer;
+import de.lundlucenany9.ees.Token;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

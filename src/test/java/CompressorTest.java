@@ -1,7 +1,7 @@
-import de.lundlucenany9.compiler.Compiler;
-import de.lundlucenany9.Compressor;
-import de.lundlucenany9.runtime.VM;
-import de.lundlucenany9.runtime.simple.SimpleHost;
+import de.lundlucenany9.ees.compiler.Compiler;
+import de.lundlucenany9.ees.Compressor;
+import de.lundlucenany9.ees.runtime.VM;
+import de.lundlucenany9.ees.runtime.simple.SimpleHost;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileOutputStream;

@@ -1,14 +1,14 @@
-import de.lundlucenany9.Lexer;
-import de.lundlucenany9.Parser;
-import de.lundlucenany9.Token;
-import de.lundlucenany9.ast.Program;
-import de.lundlucenany9.compiler.Compiler;
-import de.lundlucenany9.compiler.Disassembler;
-import de.lundlucenany9.debug.DebugVisualizer;
-import de.lundlucenany9.runtime.Host;
-import de.lundlucenany9.runtime.StaticObjects;
-import de.lundlucenany9.runtime.VM;
-import de.lundlucenany9.runtime.simple.SimpleHost;
+import de.lundlucenany9.ees.Lexer;
+import de.lundlucenany9.ees.Parser;
+import de.lundlucenany9.ees.Token;
+import de.lundlucenany9.ees.ast.Program;
+import de.lundlucenany9.ees.compiler.Compiler;
+import de.lundlucenany9.ees.compiler.Disassembler;
+import de.lundlucenany9.ees.debug.DebugVisualizer;
+import de.lundlucenany9.ees.runtime.Host;
+import de.lundlucenany9.ees.runtime.StaticObjects;
+import de.lundlucenany9.ees.runtime.VM;
+import de.lundlucenany9.ees.runtime.simple.SimpleHost;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileOutputStream;

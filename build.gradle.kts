@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "de.LundLucenany9"
-version = "1.0.1"
+version = "1.0.2"
 
 repositories {
     mavenCentral()
@@ -27,7 +27,7 @@ tasks.test {
 }
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "de.lundlucenany9.main.Main"
+        attributes["Main-Class"] = "de.lundlucenany9.ees.main.Main"
     }
 }
 

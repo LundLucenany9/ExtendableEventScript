@@ -1,8 +1,8 @@
-import de.lundlucenany9.Lexer;
-import de.lundlucenany9.Parser;
-import de.lundlucenany9.compiler.Compiler;
-import de.lundlucenany9.ast.Program;
-import de.lundlucenany9.compiler.Disassembler;
+import de.lundlucenany9.ees.Lexer;
+import de.lundlucenany9.ees.Parser;
+import de.lundlucenany9.ees.compiler.Compiler;
+import de.lundlucenany9.ees.ast.Program;
+import de.lundlucenany9.ees.compiler.Disassembler;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileOutputStream;
