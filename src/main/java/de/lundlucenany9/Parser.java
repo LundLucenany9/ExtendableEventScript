@@ -9,6 +9,13 @@ import de.lundlucenany9.ast.statements.*;
 
 import java.util.*;
 
+/**
+ * Parses a sequence of tokens into an abstract syntax tree.
+ * <p>
+ * The parser consumes tokens produced by {@link Lexer} and creates structured
+ * program, statement and expression nodes for later compilation or execution.
+ */
+
 public class Parser {
     private final List<Token> tokens;
     private int current = 0;

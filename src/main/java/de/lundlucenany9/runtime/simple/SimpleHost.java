@@ -6,15 +6,36 @@ import de.lundlucenany9.runtime.ScriptHost;
 import java.lang.reflect.Method;
 import java.util.*;
 
+/**
+ * Simple implementation of {@link Host} that manages script libraries and
+ * exposes annotated Java methods to scripts.
+ * <p>
+ * Registered libraries are scanned for exported functions and can be used to
+ * create script host instances.
+ */
 public final class SimpleHost implements Host {
 
     private final List<EESMethod> methods;
     private final Map<String, Library> libraries;
 
+    /**
+     * Creates a simple host from already discovered script methods and
+     * registered libraries.
+     *
+     * @param methods   the exported methods available to scripts
+     * @param libraries the libraries that own the exported methods
+     */
+
     private SimpleHost(List<EESMethod> methods, Map<String, Library> libraries) {
         this.methods = methods;
         this.libraries = libraries;
     }
+
+    /**
+     * Creates the standard simple host configuration.
+     *
+     * @return a host containing the standard libraries and exported functions
+     */
 
     public static SimpleHost getStandardHost() {
         return new Builder().addDefaultLibraries().build();

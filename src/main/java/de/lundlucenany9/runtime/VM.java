@@ -11,6 +11,13 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * Executes compiled bytecode programs.
+ * <p>
+ * The virtual machine interprets instructions, manages runtime state,
+ * coordinates script execution with the configured host environment
+ * and provides the global variable scope
+ */
 public class VM {
     private static final Opcode[] opcodes = Opcode.values();
 
@@ -19,12 +26,33 @@ public class VM {
 
 
     private final Deque<Integer> stack = new ArrayDeque<>();
-    
+
+    /**
+     * Creates a new virtual machine that uses the given host for external
+     * script interactions.
+     *
+     * @param host the host used to resolve imports and external calls
+     */
     public VM(Host host) {
         this.host = host;
         this.globals = new HashMap<>();
     }
 
+    /**
+     * Executes the given bytecode program with the provided argument and event
+     * variables.
+     * <p>
+     * The method validates the bytecode header, decompresses compressed bytecode
+     * when necessary, reads the string table and imports, creates an execution
+     * frame and then interprets the contained opcodes until the program ends or the
+     * current thread is interrupted.
+     *
+     * @param bytecode the compiled script bytecode to execute
+     * @param args     the variables passed as script arguments
+     * @param event    the variables provided as event context
+     * @throws ScriptException if the bytecode is invalid, uses an unsupported
+     *                         version or cannot be decompressed
+     */
     public void run(byte[] bytecode, Map<String, Variable> args, Map<String, Variable> event) {
         List<String> imports = new ArrayList<>();
         List<String> strings = new ArrayList<>();

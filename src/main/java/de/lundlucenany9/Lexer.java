@@ -2,6 +2,12 @@ package de.lundlucenany9;
 
 import java.util.*;
 
+/**
+ * Converts source code text into a sequence of lexical tokens.
+ * <p>
+ * The lexer recognizes language keywords, identifiers, literals, operators and
+ * punctuation used by the parser to build the abstract syntax tree.
+ */
 public class Lexer {
 
     private static final Map<String, TokenType> KEYWORDS;
@@ -37,6 +43,14 @@ public class Lexer {
 
     private final List<Token> tokens = new ArrayList<>();
 
+    /**
+     * Creates a lexer for the given source code.
+     * <p>
+     * Windows-style line endings are normalized to Unix-style line endings so that
+     * token positions and line handling remain consistent.
+     *
+     * @param source the source code to tokenize
+     */
     public Lexer(String source) {
         this.source = source.replace("\r\n", "\n");
     }

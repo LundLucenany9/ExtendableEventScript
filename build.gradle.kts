@@ -1,13 +1,19 @@
 
 plugins {
     id("java")
+    id("maven-publish")
 }
 
 group = "de.LundLucenany9"
-version = "1.0-SNAPSHOT"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
 
 dependencies {
@@ -22,5 +28,13 @@ tasks.test {
 tasks.jar {
     manifest {
         attributes["Main-Class"] = "de.lundlucenany9.main.Main"
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
     }
 }

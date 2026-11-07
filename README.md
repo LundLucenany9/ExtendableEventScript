@@ -378,6 +378,8 @@ log "Hello" {newline = true}
 
 Optional named arguments are specified in a trailing options block using the syntax `{name = value}`. The option name must match the name declared by `@EESOptional`.
 
+---
+
 ## Project Status
 
 ExtendableEventScript is under active development. Language syntax, bytecode formats, and public APIs may change as the project evolves.
