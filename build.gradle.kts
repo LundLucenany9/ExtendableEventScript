@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "de.LundLucenany9"
-version = "1.0.2"
+version = "1.0.3"
 
 repositories {
     mavenCentral()
@@ -30,6 +30,14 @@ tasks.jar {
         attributes["Main-Class"] = "de.lundlucenany9.ees.main.Main"
     }
 }
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(19))
+    }
+}
+
+
 
 publishing {
     publications {
